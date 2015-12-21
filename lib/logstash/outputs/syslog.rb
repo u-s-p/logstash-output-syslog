@@ -2,6 +2,7 @@
 require "logstash/outputs/base"
 require "logstash/namespace"
 require "date"
+require "logstash/codecs/plain"
 
 
 # Send events to a syslog server.
@@ -97,6 +98,13 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
   def register
     @client_socket = nil
 
+    if @codec.instance_of? LogStash::Codecs::Plain
+      if @codec.config["format"].nil?
+        @codec = LogStash::Codecs::Plain.new({"format" => @message})
+      end
+    end
+    @codec.on_event(&method(:publish))
+
     facility_code = FACILITY_LABELS.index(@facility)
     severity_code = SEVERITY_LABELS.index(@severity)
     @priority = (facility_code * 8) + severity_code
@@ -106,17 +114,23 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
   end
 
   def receive(event)
+    @codec.encode(event)
+  end
+
+  def publish(event, payload)
     appname = event.sprintf(@appname)
     procid = event.sprintf(@procid)
     sourcehost = event.sprintf(@sourcehost)
 
+    message = payload.to_s.gsub(/[\n]/, '\n')
+
     if @is_rfc3164
       timestamp = event.sprintf("%{+MMM dd HH:mm:ss}")
-      syslog_msg = "<#{@priority.to_s}>#{timestamp} #{sourcehost} #{appname}[#{procid}]: #{event.sprintf(@message)}"
+      syslog_msg = "<#{@priority.to_s}>#{timestamp} #{sourcehost} #{appname}[#{procid}]: #{message}"
     else
       msgid = event.sprintf(@msgid)
       timestamp = event.sprintf("%{+YYYY-MM-dd'T'HH:mm:ss.SSSZZ}")
-      syslog_msg = "<#{@priority.to_s}>1 #{timestamp} #{sourcehost} #{appname} #{procid} #{msgid} - #{event.sprintf(@message)}"
+      syslog_msg = "<#{@priority.to_s}>1 #{timestamp} #{sourcehost} #{appname} #{procid} #{msgid} - #{message}"
     end
 
     begin

@@ -181,7 +181,7 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
       @client_socket ||= connect
       @client_socket.write(syslog_msg + "\n")
     rescue => e
-      @logger.warn("syslog " + @protocol + " output exception: closing, reconnecting and resending event", :host => @host, :port => @port, :exception => e, :backtrace => e.backtrace, :event => event)
+      @logger.warn("syslog " + @protocol + " output exception: closing, reconnecting and resending event", :host => @host, :port => @port, :exception => e, :backtrace => e.backtrace, :event => event.to_hash_with_metadata)
       @client_socket.close rescue nil
       @client_socket = nil
 

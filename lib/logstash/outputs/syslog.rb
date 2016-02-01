@@ -29,12 +29,10 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
     "network news",
     "uucp",
     "clock",
-    "security/authorization",
     "ftp",
     "ntp",
     "log audit",
     "log alert",
-    "clock",
     "local0",
     "local1",
     "local2",
@@ -156,6 +154,8 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
     procid = event.sprintf(@procid)
     sourcehost = event.sprintf(@sourcehost)
 
+    message = payload.to_s.rstrip.gsub(/[\r][\n]/, "\n").gsub(/[\n]/, '\n')
+
     # fallback to pri 13 (facility 1, severity 5)
     if @use_labels
       facility_code = (FACILITY_LABELS.index(event.sprintf(@facility)) || 1)
@@ -165,8 +165,6 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
       priority = Integer(event.sprintf(@priority)) rescue 13
       priority = 13 if (priority < 0 || priority > 191)
     end
-
-    message = payload.to_s.gsub(/[\n]/, '\n')
 
     if @is_rfc3164
       timestamp = event.sprintf("%{+MMM dd HH:mm:ss}")
@@ -186,6 +184,7 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
       return if udp?
 
       @logger.warn("syslog " + @protocol + " output exception: closing, reconnecting and resending event", :host => @host, :port => @port, :exception => e, :backtrace => e.backtrace, :event => event.to_hash_with_metadata)
+
       @client_socket.close rescue nil
       @client_socket = nil
 
@@ -245,6 +244,5 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
       ssl_context.verify_mode = OpenSSL::SSL::VERIFY_PEER|OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT
     end
     ssl_context
-  end 
-
+  end
 end

@@ -229,8 +229,11 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
   def setup_ssl
     require "openssl"
     ssl_context = OpenSSL::SSL::SSLContext.new
-    ssl_context.cert = OpenSSL::X509::Certificate.new(File.read(@ssl_cert))
-    ssl_context.key = OpenSSL::PKey::RSA.new(File.read(@ssl_key),@ssl_key_passphrase)
+    # ssl client authentication should be optional:
+    if @ssl_cert and @ssl_key
+      ssl_context.cert = OpenSSL::X509::Certificate.new(File.read(@ssl_cert))
+      ssl_context.key = OpenSSL::PKey::RSA.new(File.read(@ssl_key),@ssl_key_passphrase)
+    end
     if @ssl_verify
       cert_store = OpenSSL::X509::Store.new
       # Load the system default certificate path to the store

@@ -238,10 +238,12 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
       cert_store = OpenSSL::X509::Store.new
       # Load the system default certificate path to the store
       cert_store.set_default_paths
-      if File.directory?(@ssl_cacert)
-        cert_store.add_path(@ssl_cacert)
-      else
-        cert_store.add_file(@ssl_cacert)
+      if @ssl_cacert
+        if File.directory?(@ssl_cacert)
+          cert_store.add_path(@ssl_cacert)
+        else
+          cert_store.add_file(@ssl_cacert)
+        end
       end
       ssl_context.cert_store = cert_store
       ssl_context.verify_mode = OpenSSL::SSL::VERIFY_PEER|OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT

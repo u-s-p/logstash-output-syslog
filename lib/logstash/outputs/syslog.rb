@@ -29,12 +29,10 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
     "network news",
     "uucp",
     "clock",
-    "security/authorization",
     "ftp",
     "ntp",
     "log audit",
     "log alert",
-    "clock",
     "local0",
     "local1",
     "local2",
@@ -107,9 +105,6 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
   # source host for syslog message. The new value can include `%{foo}` strings
   # to help you build a new value from other parts of the event.
   config :sourcehost, :validate => :string, :default => "%{host}"
-
-  # timestamp for syslog message
-  config :timestamp, :validate => :string, :default => "%{@timestamp}", :deprecated => "This setting is no longer necessary. The RFC setting will determine what time format is used."
 
   # application name for syslog message. The new value can include `%{foo}` strings
   # to help you build a new value from other parts of the event.
@@ -186,7 +181,6 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
       return if udp?
 
       @logger.warn("syslog " + @protocol + " output exception: closing, reconnecting and resending event", :host => @host, :port => @port, :exception => e, :backtrace => e.backtrace, :event => event.to_hash_with_metadata)
-
       @client_socket.close rescue nil
       @client_socket = nil
 

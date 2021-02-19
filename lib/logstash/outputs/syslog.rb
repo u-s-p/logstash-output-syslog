@@ -3,7 +3,7 @@ require "logstash/outputs/base"
 require "logstash/namespace"
 require "date"
 require "logstash/codecs/plain"
-
+require "resolv"
 
 # Send events to a syslog server.
 #
@@ -204,7 +204,7 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
   def connect
     socket = nil
     if udp?
-      socket = UDPSocket.new
+      socket = @host =~ Resolv::IPv6::Regex ? UDPSocket.new(Socket::AF_INET6) : UDPSocket.new
       socket.connect(@host, @port)
     else
       socket = TCPSocket.new(@host, @port)
